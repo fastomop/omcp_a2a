@@ -1,0 +1,82 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 5433
+  },
+  "ollama": {
+    "api_url": "http://localhost:11434/api/generate",
+    "default_model": "codellama-7b"
+  },
+  "database": {
+    "connection_strings": {
+      "default": "postgresql://root:root@localhost:5432/postgres?options=-c%20search_path=omop_cdm",
+      "omop_sample": "postgresql://root:root@localhost:5432/postgres?options=-c%20search_path=omop_cdm",
+      "duckdb_omop": "duckdb:///Users/niko/Downloads/synthea.duckdb"
+    },
+    "schema_directory": "schemas/"
+  },
+  "omop_cdm": {
+    "validation_rules": "omop_validation_rules.json",
+    "schema_file": "omop_cdm_schema.json"
+  },
+  "auth": {
+    "require_api_key": false,
+    "api_keys": ["dev_key_12345"]
+  },
+  "agents": {
+    "medical_expert": {
+      "url": "http://localhost:8001/expert",
+      "timeout": 30
+    },
+    "medical_validator": {
+      "url": "http://localhost:8002/validate",
+      "timeout": 15
+    }
+  },
+  "mcp": {
+    "servers": {
+      "sql": {
+        "script_path": "mcp_servers/sql_server.py",
+        "env_vars": {
+          "DEFAULT_DB_CONNECTION": "default"
+        }
+      },
+      "ollama": {
+        "script_path": "mcp_servers/ollama_server.py",
+        "env_vars": {
+          "OLLAMA_API_URL": "http://localhost:11434/api/generate",
+          "DEFAULT_MODEL": "codellama-7b"
+        }
+      },
+      "validation": {
+        "script_path": "mcp_servers/validation_server.py",
+        "env_vars": {}
+      },
+      "agent": {
+        "script_path": "mcp_servers/agent_server.py",
+        "env_vars": {}
+      }
+    },
+    "orchestrator": {
+      "discovery_timeout": 5,
+      "retry_interval": 1,
+      "max_retries": 3
+    },
+    "transport": {
+      "default": "stdio",
+      "alternatives": ["http", "websocket"]
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file": "logs/omcp.log",
+    "max_size": 10485760,
+    "backup_count": 5
+  },
+  "refinement": {
+    "enabled": true,
+    "max_attempts": 2,
+    "prompt_template": "The original SQL query has the following issues:\n{issues}\n\nOriginal SQL:\n{sql_query}\n\nPlease provide a corrected SQL query that follows OMOP CDM best practices."
+  }
+}
