@@ -1,0 +1,47 @@
+# Core dependencies
+mcp>=1.6.0                            # Model Context Protocol
+fastapi>=0.103.1                      # API framework
+uvicorn>=0.23.2                       # ASGI server for FastAPI
+pydantic>=2.3.0                       # Data validation
+httpx>=0.24.1                         # Async HTTP client for API calls
+
+# Database drivers and tools
+sqlalchemy>=2.0.20                    # SQL toolkit and ORM
+ibis-framework>=10.5.0                # Database abstraction layer
+psycopg2-binary>=2.9.6                # PostgreSQL driver
+duckdb>=0.9.2                         # DuckDB for embedded OLAP
+
+# A2A Protocol
+git+https://github.com/djsamseng/A2A@prefixPythonPackage#subdirectory=samples/python  # A2A protocol implementation
+
+# Environment and configuration
+python-dotenv>=1.0.0                  # Environment variable management
+pyyaml>=6.0.2                         # YAML configuration support
+pydantic-settings>=2.9.1              # Settings management with Pydantic
+
+# Logging and monitoring
+loguru>=0.7.0                         # Better logging
+rich>=14.0.0                          # Rich text formatting
+
+# Authentication and security
+python-jose[cryptography]>=3.3.0      # JWT token handling (optional)
+passlib[bcrypt]>=1.7.4                # Password hashing (optional)
+
+# Testing
+pytest>=7.4.0                         # Testing framework
+pytest-asyncio>=0.21.1                # Async test support
+pytest-cov>=4.1.0                     # Coverage reports
+httpx>=0.24.1                         # HTTP client for testing
+
+# Development tools
+black>=25.1.0                         # Code formatting
+isort>=5.12.0                         # Import sorting
+ruff>=0.11.6                          # Fast linter
+pre-commit>=4.2.0                     # Pre-commit hooks
+
+# Documentation
+mkdocs>=1.6.0                         # Documentation generator
+mkdocs-material>=9.5.0                # Material theme for MkDocs
+
+# LLM integration
+openai>=1.0.0                         # OpenAI API (optional alternative to Ollama)
