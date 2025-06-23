@@ -189,7 +189,7 @@ The framework provides abstract foundations in several categories:
 - **GDPR** - General Data Protection Regulation
 - **HITECH** - Health Information Technology for Economic and Clinical Health
 - **FDA 21 CFR Part 11** - Electronic Records and Signatures
-**To-Be-Implemented-abstract-classes-available**
+- **To-Be-Implemented-abstract-classes-available**
 
 ### Security Features
 - PHI (Protected Health Information) detection and protection
@@ -269,7 +269,7 @@ a2a-medical-foundation/
 - [Security Guide](docs/security.md) - Implementing secure medical systems
 - [API Reference](docs/api.md) - Complete API documentation
 - [Examples](examples/) - Working examples and tutorials
-**To-be-implemented**
+- **To-be-implemented**
 
 ## 🤝 Contributing
 
