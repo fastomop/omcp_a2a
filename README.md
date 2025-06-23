@@ -189,6 +189,7 @@ The framework provides abstract foundations in several categories:
 - **GDPR** - General Data Protection Regulation
 - **HITECH** - Health Information Technology for Economic and Clinical Health
 - **FDA 21 CFR Part 11** - Electronic Records and Signatures
+**To-Be-Implemented-abstract-classes-available**
 
 ### Security Features
 - PHI (Protected Health Information) detection and protection
@@ -199,36 +200,40 @@ The framework provides abstract foundations in several categories:
 
 ## 📋 Example Use Cases
 
-### 1. Telemedicine Platform
+### 1. Semantic Medical Agent
 ```python
-class TelemedicineAgent(MedicalAgent):
-    # Implement virtual consultation capabilities
-    # Handle patient-provider communication
-    # Ensure HIPAA compliance
+class SemanticMedicalAgent(MedicalAgent):
+    # Implement medical vocabulary and ontology processing
+    # Natural language understanding for clinical text
+    # Concept mapping and semantic enrichment
+    # Medical terminology standardization (SNOMED, ICD, LOINC)
 ```
 
-### 2. Clinical Decision Support
+### 2. OMOP Agent
 ```python
-class ClinicalDSSAgent(MedicalAgent):
-    # Implement evidence-based recommendations
-    # Integration with clinical guidelines
-    # Drug interaction checking
+class OMOPAgent(MedicalAgent):
+    # Implement OMOP Common Data Model integration
+    # Standardized healthcare data transformation
+    # Clinical concept mapping and vocabulary services
+    # Real-world evidence generation and analytics
 ```
 
-### 3. Medical Record Integration
+### 3. Python/R Research Agent
 ```python
-class EHRIntegrationAgent(MedicalAgent):
-    # Implement HL7 FHIR compatibility
-    # Cross-system data synchronization
-    # Audit trail maintenance
+class ResearchAnalyticsAgent(MedicalAgent):
+    # Implement statistical analysis and machine learning
+    # Python/R code generation for research questions
+    # Clinical data mining and biostatistics
+    # Automated research pipeline execution
 ```
 
-### 4. Emergency Response System
+### 4. Medical Q&A Orchestrator
 ```python
-class EmergencyAgent(MedicalAgent):
-    # Implement critical condition detection
-    # Automated emergency protocols
-    # Priority-based routing
+class MedicalQAOrchestrator(MedicalAgent):
+    # Implement multi-agent coordination for complex queries
+    # Clinical question decomposition and routing
+    # Evidence synthesis from multiple specialist agents
+    # Comprehensive medical response generation
 ```
 
 ## 🔧 Development
@@ -264,6 +269,7 @@ a2a-medical-foundation/
 - [Security Guide](docs/security.md) - Implementing secure medical systems
 - [API Reference](docs/api.md) - Complete API documentation
 - [Examples](examples/) - Working examples and tutorials
+**To-be-implemented**
 
 ## 🤝 Contributing
 
