@@ -25,7 +25,7 @@ This framework provides **abstract base classes** rather than concrete implement
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/fastomop/omcp_a2a.git
 cd medical-a2a
 
 # Install dependencies using uv (recommended)
