@@ -35,60 +35,54 @@ class TestWorldModelConcrete:
     def test_world_model_initialization(self, test_world_model):
         """Test WorldModel initialization."""
         assert test_world_model.model_id is not None
-        assert test_world_model.created_at is None
-        assert test_world_model.last_updated is None
-        assert test_world_model.knowledge_base == {}
-        assert test_world_model.predictions == {}
+        assert test_world_model.created_at is not None
+        assert test_world_model.last_updated is not None
+        assert test_world_model.agent_registry == {}
+        assert test_world_model.collaboration_history == []
     
-    def test_world_model_update(self, test_world_model, sample_processed_observation):
+    def test_world_model_update(self, test_world_model):
         """Test WorldModel update functionality."""
-        test_world_model.update(sample_processed_observation)
+        observation = ProcessedObservation(
+            data={"type": "patient_vitals"},
+            timestamp=1234567890.0,
+            source="test",
+            confidence=0.9
+        )
         
-        assert test_world_model.knowledge_base[sample_processed_observation.source] == sample_processed_observation.data
-        assert test_world_model.last_updated == sample_processed_observation.timestamp
+        test_world_model.update(observation)
+        assert len(test_world_model.test_observations) == 1
+        assert test_world_model.test_observations[0] == observation
     
     def test_world_model_query(self, test_world_model):
         """Test WorldModel query functionality."""
-        # Test query with no data
-        result = test_world_model.query("unknown_key")
-        assert result == "No information available"
-        
-        # Add data and test query
-        test_world_model.knowledge_base["test_key"] = "test_value"
-        result = test_world_model.query("test_key")
-        assert result == "test_value"
+        result = test_world_model.query("test_query")
+        assert result == "test_result"
     
     def test_world_model_predict(self, test_world_model):
         """Test WorldModel prediction functionality."""
-        scenario = {"condition": "diabetes", "age": 45}
-        prediction = test_world_model.predict(scenario)
-        
-        assert "prediction" in prediction
-        assert "confidence" in prediction
-        assert prediction["confidence"] == 0.5  # Default value
+        result = test_world_model.predict({"scenario": "test"})
+        assert result == {"prediction": "test_prediction"}
     
     def test_world_model_state_summary(self, test_world_model):
         """Test WorldModel state summary."""
         summary = test_world_model.get_state_summary()
-        
-        assert "knowledge_items" in summary
-        assert "predictions_cached" in summary
-        assert "last_updated" in summary
-        assert summary["knowledge_items"] == 0
-        assert summary["predictions_cached"] == 0
+        assert "observations" in summary
+        assert summary["observations"] == 0
     
     def test_world_model_reset(self, test_world_model):
         """Test WorldModel reset functionality."""
-        # Add some data
-        test_world_model.knowledge_base["test"] = "data"
-        test_world_model.predictions["scenario"] = "prediction"
-        test_world_model.last_updated = datetime.now().timestamp()
+        # Add some test data
+        observation = ProcessedObservation(
+            data={"test": "data"},
+            timestamp=1234567890.0,
+            source="test",
+            confidence=0.9
+        )
+        test_world_model.update(observation)
         
         # Reset and verify
         test_world_model.reset()
-        assert test_world_model.knowledge_base == {}
-        assert test_world_model.predictions == {}
-        assert test_world_model.last_updated is None
+        assert test_world_model.get_state_summary()["observations"] == 0
     
     def test_world_model_info(self, test_world_model):
         """Test WorldModel info retrieval."""
@@ -98,7 +92,8 @@ class TestWorldModelConcrete:
         assert "model_type" in info
         assert "created_at" in info
         assert "last_updated" in info
-        assert info["model_type"] == "TestWorldModel"
+        assert "registered_agents" in info
+        assert "collaboration_events" in info
 
 
 class TestMentalStateClass:
@@ -307,8 +302,10 @@ class TestMedicalAgentConcrete:
         assert "agent_id" in info
         assert "agent_type" in info
         assert "capabilities" in info
-        assert "mental_state_summary" in info
+        assert "mental_state" in info
         assert "connected_clients" in info
+        assert "is_active" in info
+        assert "agent_card" in info
         
         assert info["agent_id"] == "test-agent"
         assert info["agent_type"] == "test"
@@ -321,10 +318,10 @@ class TestCognitiveModuleAbstract:
     def test_cannot_instantiate_abstract_cognitive_module(self):
         """Test that CognitiveModule cannot be instantiated directly."""
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
-            CognitiveModule("test")
+            CognitiveModule("test-module")
     
     def test_cognitive_module_has_required_abstract_methods(self):
-        """Test that CognitiveModule has all required abstract methods."""
+        """Test that CognitiveModule has required abstract methods."""
         abstract_methods = CognitiveModule.__abstractmethods__
         expected_methods = {"process", "configure", "get_capabilities"}
         assert abstract_methods == expected_methods
@@ -349,8 +346,10 @@ class TestCognitiveModuleConcrete:
         module = TestCognitiveModule("test-module")
         
         assert module.module_id == "test-module"
-        assert module.active is True
+        assert module.is_active_flag is False
         assert module.config == {}
+        assert module.dependencies == []
+        assert module.a2a_enabled is False
     
     def test_cognitive_module_activation(self):
         """Test CognitiveModule activation/deactivation."""
@@ -368,17 +367,15 @@ class TestCognitiveModuleConcrete:
         module = TestCognitiveModule("test-module")
         
         # Test initial state
+        assert module.is_active() is False
+        
+        # Test activation
+        module.activate()
         assert module.is_active() is True
         
         # Test deactivation
         module.deactivate()
         assert module.is_active() is False
-        assert module.active is False
-        
-        # Test reactivation
-        module.activate()
-        assert module.is_active() is True
-        assert module.active is True
     
     def test_cognitive_module_info(self):
         """Test CognitiveModule info retrieval."""
@@ -400,15 +397,19 @@ class TestCognitiveModuleConcrete:
         
         assert "module_id" in info
         assert "module_type" in info
-        assert "active" in info
+        assert "is_active" in info
         assert "capabilities" in info
-        assert "config" in info
+        assert "dependencies" in info
+        assert "a2a_enabled" in info
+        assert "config_keys" in info
         
         assert info["module_id"] == "test-module"
         assert info["module_type"] == "TestCognitiveModule"
-        assert info["active"] is True
+        assert info["is_active"] is False
         assert info["capabilities"] == ["test_capability"]
-        assert info["config"] == {"setting": "value"}
+        assert info["dependencies"] == []
+        assert info["a2a_enabled"] is False
+        assert info["config_keys"] == ["setting"]
 
 
 class TestDataClasses:

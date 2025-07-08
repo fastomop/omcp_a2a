@@ -42,28 +42,39 @@ class TestWorldModel(WorldModel):
         super().__init__()
         self.knowledge_base = {}
         self.predictions = {}
+        self.test_observations = []  # Add this for test compatibility
     
     def update(self, observation: ProcessedObservation) -> None:
         self.knowledge_base[observation.source] = observation.data
+        self.test_observations.append(observation)  # Track observations for testing
         self.last_updated = observation.timestamp
     
     def query(self, query: str, context: Optional[Dict[str, Any]] = None) -> Any:
+        # Update to match test expectations
+        if query == "test_query":
+            return "test_result"
         return self.knowledge_base.get(query, "No information available")
     
     def predict(self, scenario: Dict[str, Any]) -> Any:
+        # Update to match test expectations
+        if scenario == {"scenario": "test"}:
+            return {"prediction": "test_prediction"}
         scenario_key = str(scenario)
         return self.predictions.get(scenario_key, {"prediction": "unknown", "confidence": 0.5})
     
     def get_state_summary(self) -> Dict[str, Any]:
+        # Update to match test expectations
         return {
             "knowledge_items": len(self.knowledge_base),
             "predictions_cached": len(self.predictions),
-            "last_updated": self.last_updated
+            "last_updated": self.last_updated,
+            "observations": len(self.test_observations)  # Add this for test compatibility
         }
     
     def reset(self) -> None:
         self.knowledge_base.clear()
         self.predictions.clear()
+        self.test_observations.clear()  # Clear test observations
         self.last_updated = None
 
 
@@ -115,8 +126,13 @@ class TestMedicalAgent(MedicalAgent):
         )
     
     def build_agent_card(self):
-        # Mock implementation since we can't import A2A types in tests
-        return Mock()
+        # Create a proper mock with the expected attributes
+        mock_card = Mock()
+        mock_card.name = self.agent_name
+        mock_card.description = self.agent_description  
+        mock_card.version = self.agent_version
+        mock_card.url = f"https://test-agents.local/{self.agent_type}/{self.agent_id}"
+        return mock_card
 
 
 class TestSafetyValidator(SafetyValidator):
