@@ -19,6 +19,7 @@ class ComplianceStandard(Enum):
     SOX = "sox"
     PCI_DSS = "pci_dss"
     ISO_27001 = "iso_27001"
+    MHIR = "mhir"
 
 
 class ComplianceLevel(Enum):
