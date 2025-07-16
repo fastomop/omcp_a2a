@@ -11,12 +11,13 @@ from a2a_medical.base.agent import Action
 class OllamaReasoningMixin:
     """Mixin to add Ollama LLM reasoning capabilities to any medical agent."""
 
-    def __init__(self, *args, model_name: str = "llama3.1:8b", **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, model_name: str = "llama3.1:8b", ollama_temperature: float = 0.1, **kwargs):
+        
         self.ollama_model = model_name
-        self.ollama_temperature = kwargs.get('ollama_temperature', 0.1)
+        self.ollama_temperature = ollama_temperature
         self._ensure_ollama_model()
         self.mcp_manager = MCPManager([])
+        super().__init__(*args, **kwargs)
 
     def _ensure_ollama_model(self):
         """Ensure the Ollama model is available."""
