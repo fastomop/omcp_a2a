@@ -327,7 +327,9 @@ class MedicalAgent(RequestHandler, ABC):
             
         except Exception as e:
             # Create error message
-            parts = [TextPart(text=f"Error processing message: {str(e)}")]
+            from a2a.types import Part
+            text_part = TextPart(text=f"Error processing message: {str(e)}")
+            parts = [Part(root=text_part)]
             return Message(
                 messageId=str(uuid.uuid4()),
                 parts=parts,
@@ -420,18 +422,24 @@ class MedicalAgent(RequestHandler, ABC):
     
     def _build_message_response(self, result: ActionResult) -> Message:
         """Build an A2A message response from an action result."""
+        from a2a.types import Part
         parts = []
         if result.success and result.data:
             if isinstance(result.data, str):
-                parts.append(TextPart(text=result.data))
+                text_part = TextPart(text=result.data)
+                parts.append(Part(root=text_part))
             elif isinstance(result.data, dict):
-                parts.append(TextPart(text=json.dumps(result.data, default=str)))
+                text_part = TextPart(text=json.dumps(result.data, default=str))
+                parts.append(Part(root=text_part))
             else:
-                parts.append(TextPart(text=str(result.data)))
+                text_part = TextPart(text=str(result.data))
+                parts.append(Part(root=text_part))
         elif result.error:
-            parts.append(TextPart(text=f"Error: {result.error}"))
+            text_part = TextPart(text=f"Error: {result.error}")
+            parts.append(Part(root=text_part))
         else:
-            parts.append(TextPart(text="Task completed successfully"))
+            text_part = TextPart(text="Task completed successfully")
+            parts.append(Part(root=text_part))
         
         return Message(
             messageId=str(uuid.uuid4()),
@@ -502,7 +510,9 @@ class MedicalAgent(RequestHandler, ABC):
             return None
         
         # Create proper A2A message parts
-        parts = [TextPart(text=message)]
+        from a2a.types import Part
+        text_part = TextPart(text=message)
+        parts = [Part(root=text_part)]
         request_message = Message(
             messageId=str(uuid.uuid4()),
             parts=parts,
