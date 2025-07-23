@@ -321,24 +321,37 @@ class MCPDiscoveryMixin:
     def __init__(self, *args, mcp_servers: Optional[List[MCPServer]] = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.mcp_manager = MCPManager(mcp_servers or [])
+        self._mcp_initialized = False
         
-        # Start connections in background
-        asyncio.create_task(self._init_mcp_connections())
-        
-    async def _init_mcp_connections(self):
-        """Initialize MCP connections."""
-        try:
-            await self.mcp_manager._connect_all()
-        except Exception as e:
-            logger.error(f"Failed to initialize MCP connections: {e}")
+    async def _ensure_mcp_initialized(self):
+        """Ensure MCP connections are initialized (lazy initialization)."""
+        if not self._mcp_initialized:
+            try:
+                await self.mcp_manager._connect_all()
+                self._mcp_initialized = True
+                logger.info("MCP connections initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize MCP connections: {e}")
+                raise
             
     async def discover_mcp_servers(self, discovery_endpoint: Optional[str] = None):
         """Discover available MCP servers."""
         await self.mcp_manager.discover_servers(discovery_endpoint)
+        self._mcp_initialized = True
         
     async def register_mcp_server(self, server: MCPServer):
         """Register a new MCP server."""
         await self.mcp_manager.register_server(server)
+        
+    async def get_mcp_tools(self):
+        """Get available MCP tools (ensures initialization)."""
+        await self._ensure_mcp_initialized()
+        return await self.mcp_manager.get_available_tools()
+        
+    async def call_mcp_tool(self, tool_id: str, parameters: Dict[str, Any]):
+        """Call an MCP tool (ensures initialization)."""
+        await self._ensure_mcp_initialized()
+        return await self.mcp_manager.call_tool(tool_id, parameters)
 
 # For backward compatibility, if MCP SDK is not installed, fall back to the original implementation
 if not MCP_AVAILABLE:
