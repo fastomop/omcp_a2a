@@ -502,7 +502,7 @@ class MedicalAgent(RequestHandler, ABC):
             return None
         
         # Create proper A2A message parts
-        parts = [Part.model_validate({"kind": "text", "text": message})]
+        parts = [TextPart(text=message)]
         request_message = Message(
             messageId=str(uuid.uuid4()),
             parts=parts,
