@@ -14,9 +14,8 @@ from contextlib import asynccontextmanager
 
 # Import official MCP client components
 try:
-    from mcp.client import ClientSession
+    from mcp.client.session import ClientSession
     from mcp.client.stdio import stdio_client, StdioServerParameters
-    from mcp.client.sse import sse_client
     import mcp.types as types
     MCP_AVAILABLE = True
 except ImportError:
