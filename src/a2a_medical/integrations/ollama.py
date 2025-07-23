@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any, List, Union
 import ollama
 from abc import ABC
-from a2a_medical.integrations.mcp import MCPManager
+from a2a_medical.integrations.mcp_official import MCPManager
 from enum import Enum
 from dataclasses import dataclass
 import json

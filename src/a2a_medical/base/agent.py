@@ -18,9 +18,19 @@ from a2a.types import (
     AgentCard, Message, SendMessageRequest, SendMessageResponse, 
     AgentCapabilities, AgentSkill, AgentExtension,
     SendMessageSuccessResponse, TextPart, Role, Part, Task, TaskStatus,
-    JSONRPCErrorResponse, InternalError
+    JSONRPCErrorResponse, InternalError, MessageSendParams,
+    TaskQueryParams, TaskIdParams, TaskPushNotificationConfig,
+    DeleteTaskPushNotificationConfigParams,
+    GetTaskPushNotificationConfigParams,
+    ListTaskPushNotificationConfigParams,
+    UnsupportedOperationError
 )
 from a2a.client import A2AClient
+from a2a.server.request_handlers.request_handler import RequestHandler
+from a2a.server.context import ServerCallContext
+from a2a.server.events.event_queue import Event
+from a2a.utils.errors import ServerError
+from collections.abc import AsyncGenerator
 
 
 # Type definitions
@@ -206,7 +216,7 @@ class MentalState:
         }
 
 
-class MedicalAgent(ABC):
+class MedicalAgent(RequestHandler, ABC):
     """Abstract base class for all medical agents with full A2A protocol compliance.
     
     Implements the core agent architecture with:
@@ -285,19 +295,23 @@ class MedicalAgent(ABC):
         """
         pass
     
-    # A2A Protocol Implementation
+    # A2A RequestHandler Implementation
     
-    async def process_request(self, request: Message) -> SendMessageResponse:
-        """Process an incoming A2A message request.
+    async def on_message_send(
+        self,
+        params: MessageSendParams,
+        context: ServerCallContext | None = None,
+    ) -> Task | Message:
+        """Handles the 'message/send' method (non-streaming).
         
         This method integrates A2A message processing with the PCE cycle.
         """
         try:
             # Record the message
-            self.mental_state.record_message(request)
+            self.mental_state.record_message(params.message)
             
             # Perceive the message as an observation
-            observation = await self.perceive(request)
+            observation = await self.perceive(params.message)
             
             # Learn from the message
             self.mental_state = await self.learn(self.mental_state, observation)
@@ -309,44 +323,121 @@ class MedicalAgent(ABC):
             result = await self.execute(action)
             
             # Build and return A2A response
-            return self._build_response(result)
+            return self._build_message_response(result)
             
         except Exception as e:
-            error = InternalError(message=str(e))
-            error_response = JSONRPCErrorResponse(error=error)
-            return SendMessageResponse(root=error_response)
-    
-    def _build_response(self, result: ActionResult) -> SendMessageResponse:
-        """Build an A2A protocol compliant response from an action result."""
-        if result.success:
-            # Create response parts
-            parts = []
-            if result.data:
-                if isinstance(result.data, str):
-                    parts.append(TextPart(text=result.data))
-                elif isinstance(result.data, dict) and "response" in result.data:
-                    parts.append(TextPart(text=str(result.data["response"])))
-                else:
-                    parts.append(TextPart(text=json.dumps(result.data, default=str)))
-            
-            if not parts:
-                parts.append(TextPart(text="Task completed successfully"))
-            
-            response_message = Message(
+            # Create error message
+            parts = [TextPart(text=f"Error processing message: {str(e)}")]
+            return Message(
                 messageId=str(uuid.uuid4()),
                 parts=parts,
                 role=Role.agent
             )
-            
-            success_response = SendMessageSuccessResponse(
-                result=response_message
-            )
-            
-            return SendMessageResponse(root=success_response)
+    
+    async def on_message_send_stream(
+        self,
+        params: MessageSendParams,
+        context: ServerCallContext | None = None,
+    ) -> AsyncGenerator[Event]:
+        """Handles the 'message/stream' method (streaming)."""
+        # Default implementation raises UnsupportedOperationError
+        raise ServerError(error=UnsupportedOperationError())
+        yield  # Required for generator
+    
+    async def on_get_task(
+        self,
+        params: TaskQueryParams,
+        context: ServerCallContext | None = None,
+    ) -> Task | None:
+        """Handles the 'tasks/get' method."""
+        # Default implementation - concrete agents can override
+        task_id = params.id if hasattr(params, 'id') else None
+        if task_id and task_id in self.mental_state.active_tasks:
+            return self.mental_state.active_tasks[task_id]
+        return None
+    
+    async def on_cancel_task(
+        self,
+        params: TaskIdParams,
+        context: ServerCallContext | None = None,
+    ) -> Task | None:
+        """Handles the 'tasks/cancel' method."""
+        # Default implementation - concrete agents can override
+        task_id = params.id if hasattr(params, 'id') else None
+        if task_id and task_id in self.mental_state.active_tasks:
+            task = self.mental_state.active_tasks[task_id]
+            # Update task status to cancelled if possible
+            if hasattr(task, 'status'):
+                task.status = TaskStatus.cancelled
+            return task
+        return None
+    
+    async def on_set_task_push_notification_config(
+        self,
+        params: TaskPushNotificationConfig,
+        context: ServerCallContext | None = None,
+    ) -> TaskPushNotificationConfig:
+        """Handles the 'tasks/pushNotificationConfig/set' method."""
+        # Default implementation - concrete agents can override
+        return params
+    
+    async def on_get_task_push_notification_config(
+        self,
+        params: TaskIdParams | GetTaskPushNotificationConfigParams,
+        context: ServerCallContext | None = None,
+    ) -> TaskPushNotificationConfig:
+        """Handles the 'tasks/pushNotificationConfig/get' method."""
+        # Default implementation - concrete agents can override
+        raise ServerError(error=UnsupportedOperationError())
+    
+    async def on_resubscribe_to_task(
+        self,
+        params: TaskIdParams,
+        context: ServerCallContext | None = None,
+    ) -> AsyncGenerator[Event]:
+        """Handles the 'tasks/resubscribe' method."""
+        # Default implementation raises UnsupportedOperationError
+        raise ServerError(error=UnsupportedOperationError())
+        yield  # Required for generator
+    
+    async def on_list_task_push_notification_config(
+        self,
+        params: ListTaskPushNotificationConfigParams,
+        context: ServerCallContext | None = None,
+    ) -> list[TaskPushNotificationConfig]:
+        """Handles the 'tasks/pushNotificationConfig/list' method."""
+        # Default implementation - concrete agents can override
+        return []
+    
+    async def on_delete_task_push_notification_config(
+        self,
+        params: DeleteTaskPushNotificationConfigParams,
+        context: ServerCallContext | None = None,
+    ) -> None:
+        """Handles the 'tasks/pushNotificationConfig/delete' method."""
+        # Default implementation - concrete agents can override
+        pass
+    
+    def _build_message_response(self, result: ActionResult) -> Message:
+        """Build an A2A message response from an action result."""
+        parts = []
+        if result.success and result.data:
+            if isinstance(result.data, str):
+                parts.append(TextPart(text=result.data))
+            elif isinstance(result.data, dict):
+                parts.append(TextPart(text=json.dumps(result.data, default=str)))
+            else:
+                parts.append(TextPart(text=str(result.data)))
+        elif result.error:
+            parts.append(TextPart(text=f"Error: {result.error}"))
         else:
-            error = InternalError(message=result.error or "Action execution failed")
-            error_response = JSONRPCErrorResponse(error=error)
-            return SendMessageResponse(root=error_response)
+            parts.append(TextPart(text="Task completed successfully"))
+        
+        return Message(
+            messageId=str(uuid.uuid4()),
+            parts=parts,
+            role=Role.agent
+        )
     
     @abstractmethod
     def build_agent_card(self) -> AgentCard:
