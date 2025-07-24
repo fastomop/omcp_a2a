@@ -23,7 +23,7 @@ from a2a.types import (
     DeleteTaskPushNotificationConfigParams,
     GetTaskPushNotificationConfigParams,
     ListTaskPushNotificationConfigParams,
-    UnsupportedOperationError
+    UnsupportedOperationError, TaskState
 )
 from a2a.client import A2AClient
 from a2a.server.request_handlers.request_handler import RequestHandler
@@ -370,7 +370,7 @@ class MedicalAgent(RequestHandler, ABC):
             task = self.mental_state.active_tasks[task_id]
             # Update task status to cancelled if possible
             if hasattr(task, 'status'):
-                task.status = TaskStatus.cancelled
+                task.status.state = TaskState.canceled
             return task
         return None
     
@@ -513,8 +513,12 @@ class MedicalAgent(RequestHandler, ABC):
         from a2a.types import Part
         text_part = TextPart(text=message)
         parts = [Part(root=text_part)]
+        
+        # Ensure a unique message ID is always generated
+        message_id = str(uuid.uuid4())
+
         request_message = Message(
-            messageId=str(uuid.uuid4()),
+            messageId=message_id,
             parts=parts,
             role=Role.user
         )
