@@ -113,14 +113,15 @@ class MCPClient:
         
     async def connect(self):
         """Connect to the MCP server."""
-        if self.server.transport == Transport.STDIO:
-            # Use stdio transport
-            stdio_params = self.server.get_stdio_params()
-            self._context_manager = stdio_client(stdio_params)
+        if self.server.stdio_params:
+            logger.debug(f"Attempting to connect to STDIO server with params: {self.server.stdio_params}")
+            self._context_manager = stdio_client(self.server.stdio_params)
             self._read_stream, self._write_stream = await self._context_manager.__aenter__()
-        else:
+        elif self.server.url:
             # SSE transport would be implemented here when available in official SDK
             raise NotImplementedError("SSE transport not yet implemented with official SDK")
+        else:
+            raise ValueError("MCPServer must have either stdio_params or url configured.")
             
         # Create session
         self.session = ClientSession(self._read_stream, self._write_stream)
