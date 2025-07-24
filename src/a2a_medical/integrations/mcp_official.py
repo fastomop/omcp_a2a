@@ -11,6 +11,7 @@ import logging
 from pathlib import Path
 import os
 from contextlib import asynccontextmanager
+import sys
 
 # Import official MCP client components
 try:
@@ -57,37 +58,6 @@ class MCPServer:
     def transport(self) -> Transport:
         """Get transport type from URL."""
         return Transport.from_url(self.url)
-    
-    def get_stdio_params(self) -> 'StdioServerParameters':
-        """Get StdioServerParameters for stdio transport."""
-        if self.transport != Transport.STDIO:
-            raise ValueError("StdioServerParameters only available for stdio transport")
-            
-        script_path = self.url.replace("stdio://", "")
-        
-        # Determine how to run the script
-        if script_path.endswith(".py"):
-            # For Python scripts, check if we should use uv
-            base_cmd = ["uv", "run", "python"] if Path("pyproject.toml").exists() else ["python"]
-            command = base_cmd[0]
-            args = base_cmd[1:] + [script_path] + (self.args or [])
-        else:
-            # For executables
-            command = script_path
-            args = self.args or []
-            
-        # Prepare environment
-        env = None
-        if self.env:
-            env = os.environ.copy()
-            env.update(self.env)
-            
-        return StdioServerParameters(
-            command=command,
-            args=args,
-            env=env,
-            cwd=self.working_dir
-        )
 
 @dataclass
 class MCPTool:
@@ -113,15 +83,24 @@ class MCPClient:
         
     async def connect(self):
         """Connect to the MCP server."""
-        if self.server.stdio_params:
-            logger.debug(f"Attempting to connect to STDIO server with params: {self.server.stdio_params}")
-            self._context_manager = stdio_client(self.server.stdio_params)
+        if self.server.transport == Transport.STDIO:
+            script_path = self.server.url.replace("stdio://", "")
+            
+            params = StdioServerParameters(
+                command=sys.executable,  # Use the current python executable
+                args=[script_path] + (self.server.args or []),
+                env=self.server.env,
+                cwd=self.server.working_dir,
+            )
+            
+            logger.debug(f"Attempting to connect to STDIO server with params: {params}")
+            self._context_manager = stdio_client(params)
             self._read_stream, self._write_stream = await self._context_manager.__aenter__()
-        elif self.server.url:
+        elif self.server.transport == Transport.SSE:
             # SSE transport would be implemented here when available in official SDK
             raise NotImplementedError("SSE transport not yet implemented with official SDK")
         else:
-            raise ValueError("MCPServer must have either stdio_params or url configured.")
+            raise ValueError("MCPServer must have a valid transport protocol.")
             
         # Create session
         self.session = ClientSession(self._read_stream, self._write_stream)
